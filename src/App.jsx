@@ -2,10 +2,12 @@ import { useState } from "react";
 import "./App.css";
 import BonusObiettivi from "./components/BonusObiettivi";
 import NuovoObiettivo from "./components/NuovoObiettivo";
+import ObiettiviLista from "./components/ObiettiviLista";
 
 const TABS = [
   { id: "bonus", label: "Bonus · Obiettivi", component: BonusObiettivi },
   { id: "mbo", label: "Nuovo Obiettivo MBO", component: NuovoObiettivo },
+  { id: "lista", label: "Obiettivi (Lista)", component: ObiettiviLista },
 ];
 
 export default function App() {
