@@ -209,9 +209,6 @@ export default function BonusObiettivi() {
         <p className="card-sub">
           Seleziona gli obiettivi e assegna peso per il calcolo del bonus
         </p>
-        <p className="rule">
-          LA SOMMA DEI PESI DEGLI OBIETTIVI ASSOCIATI AL BONUS DEVE ESSERE DEL 100%
-        </p>
 
         <div className="obj-actions">
           <button className="btn-create" type="button">
