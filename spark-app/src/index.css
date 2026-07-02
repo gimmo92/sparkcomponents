@@ -1,0 +1,49 @@
+:root {
+  --bg: #f4f5f8;
+  --card: #ffffff;
+  --navy: #16294d;
+  --blue-title: #1f4bd8;
+  --blue: #2f7bf6;
+  --blue-strong: #1f5fe0;
+  --sky: #29a3f4;
+  --text: #2b3550;
+  --muted: #8a93a8;
+  --label: #59617a;
+  --border: #e2e6ee;
+  --input-bg: #ffffff;
+  --red: #ff4d5e;
+  --red-strong: #f0304a;
+  --pink-a: #ff2e9a;
+  --pink-b: #c026d3;
+  --chip: #1d2b4d;
+  --radius: 14px;
+  --shadow: 0 10px 30px rgba(26, 42, 82, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+}
+
+input,
+select {
+  font-family: inherit;
+}
