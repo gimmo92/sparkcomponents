@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const STEPS = ["Assegna utenti", "Soglia", "Peso", "Obiettivi"];
+const STEPS = ["Assegna utenti", "Obiettivi"];
 
 const INITIAL_OBJECTIVES = [
   {
@@ -78,9 +78,14 @@ function ObjectiveBlock({ obj, onChange, onAddRow, onRemoveRow }) {
     <div className="obj">
       <div className="obj-head">
         <h3 className="obj-name">{obj.name}</h3>
-        <button className="btn-edit" type="button">
-          <span aria-hidden>✎</span> MODIFICA OBIETTIVO
-        </button>
+        <div className="obj-head-actions">
+          <button className="btn-edit" type="button">
+            <span aria-hidden>✎</span> MODIFICA OBIETTIVO
+          </button>
+          <button className="btn-measure" type="button">
+            <span aria-hidden>＋</span> AGGIUNGI MISURAZIONE
+          </button>
+        </div>
       </div>
 
       <dl className="details">
@@ -165,9 +170,13 @@ function ObjectiveBlock({ obj, onChange, onAddRow, onRemoveRow }) {
 
 export default function BonusObiettivi() {
   const [objectives, setObjectives] = useState(INITIAL_OBJECTIVES);
-  const [activeStep] = useState(3);
+  const [activeStep, setActiveStep] = useState(0);
+  const [users, setUsers] = useState([
+    "Verdi Martina (martinaverdi@tryspark.co) - Country Manager – Belgium",
+  ]);
   const [showReuseModal, setShowReuseModal] = useState(false);
   const [reuseChoice, setReuseChoice] = useState(REUSABLE_OBJECTIVES[0]);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const updateObjective = (updated) =>
     setObjectives((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
@@ -213,7 +222,7 @@ export default function BonusObiettivi() {
   return (
     <div className="page">
       <div className="topbar">
-        <h1 className="page-title">Bonus</h1>
+        <span />
         <button className="gear" type="button" aria-label="Impostazioni">
           ⚙
         </button>
@@ -225,52 +234,154 @@ export default function BonusObiettivi() {
         </button>
         <div className="stepper">
           {STEPS.map((label, i) => (
-            <div key={label} className={`step${i <= activeStep ? " active" : ""}`}>
+            <button
+              key={label}
+              type="button"
+              className={`step${i <= activeStep ? " active" : ""}`}
+              onClick={() => setActiveStep(i)}
+            >
               <span className="dot" />
               <span className="lbl">{label}</span>
-            </div>
+            </button>
           ))}
         </div>
       </div>
 
-      <div className="card">
-        <h2 className="card-title">Seleziona obiettivi</h2>
-        <p className="card-sub">
-          Seleziona gli obiettivi e assegna peso per il calcolo del bonus
-        </p>
+      {activeStep === 0 ? (
+        <div className="card">
+          <h2 className="card-title">Assegna utenti al bonus</h2>
+          <p className="card-sub">Definisci come assegnare il bonus ad ogni utente</p>
 
-        <div className="obj-actions">
-          <button className="btn-create" type="button">
-            <span aria-hidden>＋</span> CREA OBIETTIVO
-          </button>
+          <div className="field-block">
+            <label className="fl">Titolo Bonus</label>
+            <input className="input input--pill" defaultValue="Bonus  Martina Verdi 2025" />
+          </div>
+
+          <div className="field-block">
+            <label className="fl">Assegnazione</label>
+            <input className="input input--pill" defaultValue="Utenti" />
+          </div>
+
+          <div className="field-block">
+            <label className="fl">Lista utenti</label>
+            <div className="multiselect">
+              <div className="ms-chips">
+                {users.map((u) => (
+                  <span className="chip" key={u}>
+                    {u}
+                    <button
+                      type="button"
+                      onClick={() => setUsers((prev) => prev.filter((x) => x !== u))}
+                      aria-label="Rimuovi"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <span className="ms-placeholder">Seleziona utenti</span>
+            </div>
+          </div>
+
+          <p className="hint">
+            È possibile impostare l'importo bonus variabile dalle impostazioni utente
+          </p>
+
+          <div className="field-block">
+            <label className="fl">Ciclo di riferimento</label>
+            <input className="input input--pill" defaultValue="2025" />
+          </div>
+
           <button
-            className="btn-reuse"
+            className={`advanced-toggle${showAdvanced ? " open" : ""}`}
             type="button"
-            onClick={() => setShowReuseModal(true)}
+            onClick={() => setShowAdvanced((v) => !v)}
+            aria-expanded={showAdvanced}
           >
-            <span aria-hidden>⟳</span> RIUTILIZZA OBIETTIVO
+            <span className="advanced-gear" aria-hidden>⚙</span>
+            Avanzate
+            <span className="advanced-caret" aria-hidden>▾</span>
           </button>
-        </div>
 
-        {objectives.map((obj) => (
-          <ObjectiveBlock
-            key={obj.id}
-            obj={obj}
-            onChange={updateObjective}
-            onAddRow={addRow}
-            onRemoveRow={removeRow}
-          />
-        ))}
+          {showAdvanced && (
+            <div className="advanced-panel">
+              <div className="adv-section">
+                <h3 className="adv-title">Soglia di accesso ai bonus</h3>
+                <p className="adv-sub">Gestisci le soglie di accesso ai bonus (opzionale)</p>
+                <select className="select input--pill" defaultValue="">
+                  <option value="" disabled>
+                    Seleziona un obiettivo per la soglia...
+                  </option>
+                  {objectives.map((o) => (
+                    <option key={o.id} value={o.name}>
+                      {o.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-        <div className="footer-actions">
-          <button className="btn-back-ghost" type="button">
-            INDIETRO
-          </button>
-          <button className="btn-primary" type="button">
-            AGGIORNA BONUS
-          </button>
+              <div className="adv-section">
+                <h3 className="adv-title">Definisci Peso</h3>
+                <p className="adv-sub">Imposta il peso del bonus (valore percentuale)</p>
+                <label className="fl">Peso del bonus</label>
+                <input className="input input--pill" defaultValue="100" />
+                <p className="adv-hint">
+                  Il peso determina l'importanza relativa di questo bonus
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="footer-actions">
+            <button className="btn-back-ghost" type="button">
+              ANNULLA
+            </button>
+            <button
+              className="btn-primary"
+              type="button"
+              onClick={() => setActiveStep(1)}
+            >
+              CONTINUA
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="card">
+          <h2 className="card-title">Scheda obiettivo</h2>
+
+          <div className="obj-actions">
+            <button className="btn-create" type="button">
+              <span aria-hidden>＋</span> CREA OBIETTIVO
+            </button>
+            <button
+              className="btn-reuse"
+              type="button"
+              onClick={() => setShowReuseModal(true)}
+            >
+              <span aria-hidden>⟳</span> RIUTILIZZA OBIETTIVO
+            </button>
+          </div>
+
+          {objectives.map((obj) => (
+            <ObjectiveBlock
+              key={obj.id}
+              obj={obj}
+              onChange={updateObjective}
+              onAddRow={addRow}
+              onRemoveRow={removeRow}
+            />
+          ))}
+
+          <div className="footer-actions">
+            <button className="btn-back-ghost" type="button">
+              INDIETRO
+            </button>
+            <button className="btn-primary" type="button">
+              AGGIORNA BONUS
+            </button>
+          </div>
+        </div>
+      )}
 
       {showReuseModal && (
         <div className="modal-overlay" onClick={() => setShowReuseModal(false)}>
