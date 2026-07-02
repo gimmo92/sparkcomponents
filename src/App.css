@@ -441,6 +441,70 @@
   box-shadow: 0 8px 18px rgba(31, 95, 224, 0.35);
 }
 
+/* ---- modal ---- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 45, 0.45);
+  backdrop-filter: blur(2px);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+  padding: 20px;
+  animation: fade-in 0.15s ease;
+}
+
+.modal {
+  width: 100%;
+  max-width: 440px;
+  background: #fff;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 24px 60px rgba(16, 24, 45, 0.35);
+  animation: pop-in 0.16s ease;
+}
+
+.modal-title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.modal-sub {
+  margin: 0 0 20px;
+  font-size: 13.5px;
+  color: var(--label);
+}
+
+.modal-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--label);
+  margin-bottom: 6px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
 /* =========================================================
    Nuovo Obiettivo (MBO)
    ========================================================= */

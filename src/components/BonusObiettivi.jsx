@@ -55,6 +55,15 @@ const INITIAL_OBJECTIVES = [
 
 let nextRowId = 1000;
 
+const REUSABLE_OBJECTIVES = [
+  "On Time Delivery",
+  "Gestione del cliente",
+  "Soddisfazione del cliente",
+  "Fatturato annuo",
+  "Riduzione costi operativi",
+  "Net Promoter Score",
+];
+
 function DetailRow({ label, value }) {
   return (
     <>
@@ -157,7 +166,8 @@ function ObjectiveBlock({ obj, onChange, onAddRow, onRemoveRow }) {
 export default function BonusObiettivi() {
   const [objectives, setObjectives] = useState(INITIAL_OBJECTIVES);
   const [activeStep] = useState(3);
-  const [showReuse, setShowReuse] = useState(false);
+  const [showReuseModal, setShowReuseModal] = useState(false);
+  const [reuseChoice, setReuseChoice] = useState(REUSABLE_OBJECTIVES[0]);
 
   const updateObjective = (updated) =>
     setObjectives((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
@@ -178,8 +188,27 @@ export default function BonusObiettivi() {
       )
     );
 
-  const removeChip = (objId) =>
-    setObjectives((prev) => prev.filter((o) => o.id !== objId));
+  const confirmReuse = () => {
+    setObjectives((prev) => {
+      if (prev.some((o) => o.name === reuseChoice)) return prev;
+      return [
+        ...prev,
+        {
+          id: ++nextRowId,
+          name: reuseChoice,
+          dataFine: "31/12/2026",
+          target: "0,00",
+          unita: "",
+          tipologia: "Raggiungere",
+          descrizione: "",
+          peso: "0,00",
+          modalita: "Lineare",
+          rows: [{ id: ++nextRowId, livello: "0,00", payout: "100%" }],
+        },
+      ];
+    });
+    setShowReuseModal(false);
+  };
 
   return (
     <div className="page">
@@ -215,26 +244,13 @@ export default function BonusObiettivi() {
             <span aria-hidden>＋</span> CREA OBIETTIVO
           </button>
           <button
-            className={`btn-reuse${showReuse ? " active" : ""}`}
+            className="btn-reuse"
             type="button"
-            onClick={() => setShowReuse((v) => !v)}
+            onClick={() => setShowReuseModal(true)}
           >
             <span aria-hidden>⟳</span> RIUTILIZZA OBIETTIVO
           </button>
         </div>
-
-        {showReuse && (
-          <div className="chips">
-            {objectives.map((o) => (
-              <span className="chip" key={o.id}>
-                {o.name}
-                <button type="button" onClick={() => removeChip(o.id)} aria-label="Rimuovi">
-                  ✕
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
 
         {objectives.map((obj) => (
           <ObjectiveBlock
@@ -255,6 +271,48 @@ export default function BonusObiettivi() {
           </button>
         </div>
       </div>
+
+      {showReuseModal && (
+        <div className="modal-overlay" onClick={() => setShowReuseModal(false)}>
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="modal-title">Riutilizza obiettivo</h3>
+            <p className="modal-sub">
+              Seleziona un obiettivo esistente da riutilizzare in questo bonus.
+            </p>
+
+            <label className="modal-label">Obiettivo</label>
+            <select
+              className="select"
+              value={reuseChoice}
+              onChange={(e) => setReuseChoice(e.target.value)}
+            >
+              {REUSABLE_OBJECTIVES.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+
+            <div className="modal-actions">
+              <button
+                className="btn-back-ghost"
+                type="button"
+                onClick={() => setShowReuseModal(false)}
+              >
+                ANNULLA
+              </button>
+              <button className="btn-primary" type="button" onClick={confirmReuse}>
+                SELEZIONA
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
