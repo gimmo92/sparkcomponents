@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import PillsMultiSelect from "./PillsMultiSelect";
 
 const NAV = [
   { icon: "ⓘ", label: "Profilo" },
@@ -13,22 +14,80 @@ const NAV = [
   { icon: "▧", label: "Formazione", caret: true },
 ];
 
-const ASSIGNMENT_TARGETS = {
-  Utenti: [
-    "Martina Verdi",
-    "Marco Rossi",
-    "Giulia Bianchi",
-    "Luca Ferrari",
-    "Sara Conti",
-  ],
-  Società: ["Spark Holding", "Spark Italia", "Spark Labs", "Spark Digital"],
-  "Di team": ["Finance", "Sales", "Marketing", "Operations", "HR"],
-};
+function userLabel(u) {
+  return `${u.name} (${u.email}) - ${u.role}`;
+}
 
-const ASSIGNMENT_TARGET_LABELS = {
-  Utenti: "Utenti",
-  Società: "Società",
-  "Di team": "Team",
+const USERS = [
+  {
+    id: "bianchi-chiara",
+    name: "Bianchi Chiara",
+    email: "chiarabianchi@tryspark.co",
+    role: "Country Manager - Spain",
+  },
+  {
+    id: "basso-gianmarco",
+    name: "Basso Gianmarco",
+    email: "adminbeta@tryspark.co",
+    role: "COO",
+  },
+  {
+    id: "bianchi-giulio",
+    name: "Bianchi Giulio",
+    email: "giuliobianchi@tryspark.co",
+    role: "CTO",
+  },
+  {
+    id: "verdi-martina",
+    name: "Verdi Martina",
+    email: "martinaverdi@tryspark.co",
+    role: "HR Manager",
+  },
+  {
+    id: "rossi-marco",
+    name: "Rossi Marco",
+    email: "marcorossi@tryspark.co",
+    role: "Sales Director",
+  },
+  {
+    id: "bianchi-giulia",
+    name: "Bianchi Giulia",
+    email: "giuliabianchi@tryspark.co",
+    role: "Marketing Lead",
+  },
+].map((u) => ({ ...u, label: userLabel(u) }));
+
+const SOCIETA = [
+  { id: "spark-holding", label: "Spark Holding" },
+  { id: "spark-italia", label: "Spark Italia" },
+  { id: "spark-labs", label: "Spark Labs" },
+  { id: "spark-digital", label: "Spark Digital" },
+];
+
+const TEAMS = [
+  { id: "finance", label: "Finance" },
+  { id: "sales", label: "Sales" },
+  { id: "marketing", label: "Marketing" },
+  { id: "operations", label: "Operations" },
+  { id: "hr", label: "HR" },
+];
+
+const ASSIGNMENT_CONFIG = {
+  Utenti: {
+    label: "Cerca per utenti",
+    placeholder: "Seleziona utenti",
+    options: USERS,
+  },
+  Società: {
+    label: "Cerca per società",
+    placeholder: "Seleziona società",
+    options: SOCIETA,
+  },
+  "Di team": {
+    label: "Cerca per team",
+    placeholder: "Seleziona team",
+    options: TEAMS,
+  },
 };
 
 const CARDS = [
@@ -62,7 +121,7 @@ const CARDS = [
     progress: 2,
     stato: "In corso",
     assegnazione: "Di team",
-    team: "Finance",
+    team: "finance",
     tipo: "Quantitativo",
     anno: "2027",
   },
@@ -74,7 +133,7 @@ const CARDS = [
     progress: 100,
     stato: "In corso",
     assegnazione: "Società",
-    societa: "Spark Italia",
+    societa: "spark-italia",
     tipo: "Qualitativo",
     anno: "2026",
   },
@@ -86,7 +145,7 @@ const CARDS = [
     progress: 84,
     stato: "In corso",
     assegnazione: "Utenti",
-    utenti: ["Martina Verdi", "Marco Rossi"],
+    utenti: ["verdi-martina", "rossi-marco"],
     tipo: "Quantitativo",
     anno: "2026",
   },
@@ -98,7 +157,7 @@ const CARDS = [
     progress: 90,
     stato: "In corso",
     assegnazione: "Utenti",
-    utenti: ["Giulia Bianchi"],
+    utenti: ["bianchi-giulia"],
     tipo: "Qualitativo",
     anno: "2026",
   },
@@ -156,89 +215,6 @@ const DEFAULT_FILTER_VALUES = Object.fromEntries(
 function parseDate(str) {
   const [d, m, y] = str.split("/").map(Number);
   return new Date(y, m - 1, d);
-}
-
-function FilterMultiPill({ label, icon, options, selected, onChange }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const isActive = selected.length > 0;
-
-  const summary =
-    selected.length === 0
-      ? `Seleziona ${label.toLowerCase()}`
-      : selected.length === 1
-        ? selected[0]
-        : `${selected.length} selezionati`;
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e) => {
-      if (!ref.current?.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
-  const toggle = (option) => {
-    onChange(
-      selected.includes(option)
-        ? selected.filter((x) => x !== option)
-        : [...selected, option]
-    );
-  };
-
-  return (
-    <div className="ob-filter-pill-wrap" ref={ref}>
-      <button
-        type="button"
-        className={`ob-filter-pill${open ? " ob-filter-pill--open" : ""}${isActive ? " ob-filter-pill--active" : ""}`}
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
-        <span className="ob-filter-pill-icon" aria-hidden>
-          {icon}
-        </span>
-        <span className="ob-filter-pill-label">{summary}</span>
-        <span className="ob-filter-pill-chevron" aria-hidden>
-          ▾
-        </span>
-      </button>
-
-      {open && (
-        <div className="ob-filter-popover ob-filter-popover--multi">
-          <div className="ob-filter-multi-actions">
-            <button
-              type="button"
-              className="ob-filter-multi-action"
-              onClick={() => onChange([...options])}
-            >
-              Seleziona tutti
-            </button>
-            {selected.length > 0 && (
-              <button
-                type="button"
-                className="ob-filter-multi-action"
-                onClick={() => onChange([])}
-              >
-                Deseleziona
-              </button>
-            )}
-          </div>
-          {options.map((option) => (
-            <label key={option} className="ob-filter-check">
-              <input
-                type="checkbox"
-                checked={selected.includes(option)}
-                onChange={() => toggle(option)}
-              />
-              <span className="ob-filter-check-box" />
-              <span className="ob-filter-check-label">{option}</span>
-            </label>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 function FilterPill({ filter, value, onChange }) {
@@ -330,9 +306,7 @@ export default function ObiettiviLista() {
   const [assignmentTargets, setAssignmentTargets] = useState([]);
 
   const assegnazione = filterValues.assegnazione;
-  const showAssignmentMulti = assegnazione in ASSIGNMENT_TARGETS;
-  const assignmentOptions = ASSIGNMENT_TARGETS[assegnazione] ?? [];
-  const assignmentLabel = ASSIGNMENT_TARGET_LABELS[assegnazione] ?? "";
+  const assignmentConfig = ASSIGNMENT_CONFIG[assegnazione];
 
   const visibleCards = useMemo(() => {
     let list = [...CARDS];
@@ -349,7 +323,7 @@ export default function ObiettiviLista() {
     }
     if (assegnazione !== "Tutti") {
       list = list.filter((c) => c.assegnazione === assegnazione);
-      if (showAssignmentMulti) {
+      if (assignmentConfig) {
         list = list.filter((c) =>
           cardMatchesAssignmentTarget(c, assegnazione, assignmentTargets)
         );
@@ -372,7 +346,7 @@ export default function ObiettiviLista() {
     });
 
     return list;
-  }, [search, filterValues, assegnazione, showAssignmentMulti, assignmentTargets]);
+  }, [search, filterValues, assegnazione, assignmentConfig, assignmentTargets]);
 
   const visibleIds = visibleCards.map((c) => c.id);
   const allSelected =
@@ -463,16 +437,17 @@ export default function ObiettiviLista() {
                 onChange={(v) => setFilter(f.id, v)}
               />
             ))}
-            {showAssignmentMulti && (
-              <FilterMultiPill
-                label={assignmentLabel}
-                icon="☑"
-                options={assignmentOptions}
-                selected={assignmentTargets}
-                onChange={setAssignmentTargets}
-              />
-            )}
           </div>
+
+          {assignmentConfig && (
+            <PillsMultiSelect
+              label={assignmentConfig.label}
+              placeholder={assignmentConfig.placeholder}
+              options={assignmentConfig.options}
+              selected={assignmentTargets}
+              onChange={setAssignmentTargets}
+            />
+          )}
         </div>
 
         <label className="ob-select-all">
