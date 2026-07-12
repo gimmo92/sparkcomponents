@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const NAV = [
   { icon: "ⓘ", label: "Profilo" },
@@ -20,6 +20,10 @@ const CARDS = [
     entro: "31/12/2025",
     valore: "2.000.000 / 1.000.000 €",
     progress: 100,
+    stato: "Completato",
+    assegnazione: "Aziendale",
+    tipo: "Quantitativo",
+    anno: "2025",
   },
   {
     id: 2,
@@ -27,6 +31,10 @@ const CARDS = [
     entro: "31/12/2025",
     valore: "100.000.000 / 10.000.000 €",
     progress: 100,
+    stato: "Completato",
+    assegnazione: "Aziendale",
+    tipo: "Quantitativo",
+    anno: "2025",
   },
   {
     id: 3,
@@ -34,6 +42,10 @@ const CARDS = [
     entro: "31/12/2027",
     valore: "0 / 10.000.000 €",
     progress: 2,
+    stato: "In corso",
+    assegnazione: "Di team",
+    tipo: "Quantitativo",
+    anno: "2027",
   },
   {
     id: 4,
@@ -41,21 +53,178 @@ const CARDS = [
     entro: "31/12/2026",
     valore: "88,5 / 88,5 %",
     progress: 100,
+    stato: "In corso",
+    assegnazione: "Società",
+    tipo: "Qualitativo",
+    anno: "2026",
   },
 ];
 
 const FILTERS = [
-  { label: "Ordina per", options: ["Titolo", "Data", "Stato"] },
-  { label: "Tipo ordinamento", options: ["Crescente", "Decrescente"] },
-  { label: "Stato obiettivo", options: ["In corso", "Completato", "Tutti"] },
-  { label: "Assegnazione obiettivo", options: ["Aziendale", "Società", "Di team", "Utenti"] },
-  { label: "Tipo di obiettivo", options: ["Tutti", "Quantitativo", "Qualitativo"] },
-  { label: "Anno", options: ["Tutti gli anni", "2025", "2026", "2027"] },
+  {
+    id: "sortBy",
+    label: "Ordina per",
+    icon: "↕",
+    options: ["Titolo", "Data", "Stato"],
+    default: "Titolo",
+  },
+  {
+    id: "sortDir",
+    label: "Tipo ordinamento",
+    icon: "⇅",
+    options: ["Crescente", "Decrescente"],
+    default: "Crescente",
+  },
+  {
+    id: "stato",
+    label: "Stato obiettivo",
+    icon: "●",
+    options: ["In corso", "Completato", "Tutti"],
+    default: "In corso",
+  },
+  {
+    id: "assegnazione",
+    label: "Assegnazione",
+    icon: "👤",
+    options: ["Aziendale", "Società", "Di team", "Utenti", "Tutti"],
+    default: "Aziendale",
+  },
+  {
+    id: "tipo",
+    label: "Tipo di obiettivo",
+    icon: "◈",
+    options: ["Tutti", "Quantitativo", "Qualitativo"],
+    default: "Tutti",
+  },
+  {
+    id: "anno",
+    label: "Anno",
+    icon: "📅",
+    options: ["Tutti gli anni", "2025", "2026", "2027"],
+    default: "Tutti gli anni",
+  },
 ];
+
+const DEFAULT_FILTER_VALUES = Object.fromEntries(
+  FILTERS.map((f) => [f.id, f.default])
+);
+
+function parseDate(str) {
+  const [d, m, y] = str.split("/").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function FilterPill({ filter, value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const isActive = value !== filter.default;
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => {
+      if (!ref.current?.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return (
+    <div className="ob-filter-pill-wrap" ref={ref}>
+      <button
+        type="button"
+        className={`ob-filter-pill${open ? " ob-filter-pill--open" : ""}${isActive ? " ob-filter-pill--active" : ""}`}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span className="ob-filter-pill-icon" aria-hidden>
+          {filter.icon}
+        </span>
+        <span className="ob-filter-pill-label">
+          {isActive ? (
+            <>
+              <span className="ob-filter-pill-name">{filter.label}:</span>{" "}
+              {value}
+            </>
+          ) : (
+            filter.label
+          )}
+        </span>
+        <span className="ob-filter-pill-chevron" aria-hidden>
+          ▾
+        </span>
+      </button>
+
+      {open && (
+        <div className="ob-filter-popover" role="listbox">
+          {filter.options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="option"
+              aria-selected={value === option}
+              className={`ob-filter-option${value === option ? " ob-filter-option--selected" : ""}`}
+              onClick={() => {
+                onChange(option);
+                setOpen(false);
+              }}
+            >
+              {option}
+              {value === option && (
+                <span className="ob-filter-option-check" aria-hidden>
+                  ✓
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ObiettiviLista() {
   const [selected, setSelected] = useState([]);
-  const allSelected = selected.length === CARDS.length;
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState(DEFAULT_FILTER_VALUES);
+
+  const visibleCards = useMemo(() => {
+    let list = [...CARDS];
+
+    const query = search.trim().toLowerCase();
+    if (query) {
+      list = list.filter((c) => c.title.toLowerCase().includes(query));
+    }
+
+    const { stato, assegnazione, tipo, anno, sortBy, sortDir } = filterValues;
+
+    if (stato !== "Tutti") {
+      list = list.filter((c) => c.stato === stato);
+    }
+    if (assegnazione !== "Tutti") {
+      list = list.filter((c) => c.assegnazione === assegnazione);
+    }
+    if (tipo !== "Tutti") {
+      list = list.filter((c) => c.tipo === tipo);
+    }
+    if (anno !== "Tutti gli anni") {
+      list = list.filter((c) => c.anno === anno);
+    }
+
+    const dir = sortDir === "Decrescente" ? -1 : 1;
+    list.sort((a, b) => {
+      if (sortBy === "Titolo") return a.title.localeCompare(b.title) * dir;
+      if (sortBy === "Data") {
+        return (parseDate(a.entro) - parseDate(b.entro)) * dir;
+      }
+      return a.stato.localeCompare(b.stato) * dir;
+    });
+
+    return list;
+  }, [search, filterValues]);
+
+  const visibleIds = visibleCards.map((c) => c.id);
+  const allSelected =
+    visibleCards.length > 0 && visibleIds.every((id) => selected.includes(id));
 
   const toggle = (id) =>
     setSelected((prev) =>
@@ -63,7 +232,10 @@ export default function ObiettiviLista() {
     );
 
   const toggleAll = () =>
-    setSelected(allSelected ? [] : CARDS.map((c) => c.id));
+    setSelected(allSelected ? [] : visibleIds);
+
+  const setFilter = (id, value) =>
+    setFilterValues((prev) => ({ ...prev, [id]: value }));
 
   return (
     <div className="ob-layout">
@@ -102,62 +274,104 @@ export default function ObiettiviLista() {
           </button>
         </div>
 
-        <div className="card ob-filters">
-          {FILTERS.map((f) => (
-            <div className="field-block ob-filter" key={f.label}>
-              <label className="fl fl--sm">{f.label}</label>
-              <select className="select input--pill">
-                {f.options.map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
-              </select>
-            </div>
-          ))}
+        <div className="ob-toolbar">
+          <div className="ob-search-wrap">
+            <span className="ob-search-icon" aria-hidden>
+              ⌕
+            </span>
+            <input
+              type="search"
+              className="ob-search"
+              placeholder="Cerca per nome obiettivo..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button
+                type="button"
+                className="ob-search-clear"
+                aria-label="Cancella ricerca"
+                onClick={() => setSearch("")}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div className="ob-filter-row">
+            {FILTERS.map((f) => (
+              <FilterPill
+                key={f.id}
+                filter={f}
+                value={filterValues[f.id]}
+                onChange={(v) => setFilter(f.id, v)}
+              />
+            ))}
+          </div>
         </div>
 
         <label className="ob-select-all">
           <input type="checkbox" checked={allSelected} onChange={toggleAll} />
           <span className="cb" />
           Seleziona tutti
+          {visibleCards.length !== CARDS.length && (
+            <span className="ob-result-count">
+              ({visibleCards.length} di {CARDS.length})
+            </span>
+          )}
         </label>
 
-        <div className="ob-grid">
-          {CARDS.map((c) => (
-            <div className="ob-card" key={c.id}>
-              <div className="ob-card-head">
-                <label className="ob-check">
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(c.id)}
-                    onChange={() => toggle(c.id)}
-                  />
-                  <span className="cb" />
-                  <span className="ob-card-title">{c.title}</span>
-                </label>
-                <div className="ob-card-icons">
-                  <button type="button" aria-label="Duplica">⧉</button>
-                  <button type="button" aria-label="Elimina">✕</button>
+        {visibleCards.length === 0 ? (
+          <div className="ob-empty">
+            <p>Nessun obiettivo corrisponde ai filtri selezionati.</p>
+          </div>
+        ) : (
+          <div className="ob-grid">
+            {visibleCards.map((c) => (
+              <div className="ob-card" key={c.id}>
+                <div className="ob-card-head">
+                  <label className="ob-check">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(c.id)}
+                      onChange={() => toggle(c.id)}
+                    />
+                    <span className="cb" />
+                    <span className="ob-card-title">{c.title}</span>
+                  </label>
+                  <div className="ob-card-icons">
+                    <button type="button" aria-label="Duplica">
+                      ⧉
+                    </button>
+                    <button type="button" aria-label="Elimina">
+                      ✕
+                    </button>
+                  </div>
+                </div>
+
+                <p className="ob-line">
+                  Entro il: <strong>{c.entro}</strong>
+                </p>
+                <p className="ob-line">
+                  Ultimo valore: <strong>{c.valore}</strong>
+                </p>
+
+                <div className="ob-progress">
+                  <span style={{ width: `${c.progress}%` }} />
+                </div>
+
+                <div className="ob-card-actions">
+                  <button className="btn-edit" type="button">
+                    MODIFICA INFORMAZIONI
+                  </button>
+                  <button className="btn-measure" type="button">
+                    AGGIORNA MISURAZIONI
+                  </button>
                 </div>
               </div>
-
-              <p className="ob-line">
-                Entro il: <strong>{c.entro}</strong>
-              </p>
-              <p className="ob-line">
-                Ultimo valore: <strong>{c.valore}</strong>
-              </p>
-
-              <div className="ob-progress">
-                <span style={{ width: `${c.progress}%` }} />
-              </div>
-
-              <div className="ob-card-actions">
-                <button className="btn-edit" type="button">MODIFICA INFORMAZIONI</button>
-                <button className="btn-measure" type="button">AGGIORNA MISURAZIONI</button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
