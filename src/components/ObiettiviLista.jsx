@@ -269,35 +269,37 @@ export default function ObiettiviLista() {
               <span aria-hidden>⬇</span> ESPORTA OBIETTIVI
             </button>
           </div>
-          <button className="gear" type="button" aria-label="Impostazioni">
-            ⚙
-          </button>
+
+          <div className="ob-topbar-right">
+            <div className="ob-search-wrap">
+              <span className="ob-search-icon" aria-hidden>
+                ⌕
+              </span>
+              <input
+                type="search"
+                className="ob-search"
+                placeholder="Cerca per nome obiettivo..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button
+                  type="button"
+                  className="ob-search-clear"
+                  aria-label="Cancella ricerca"
+                  onClick={() => setSearch("")}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <button className="gear" type="button" aria-label="Impostazioni">
+              ⚙
+            </button>
+          </div>
         </div>
 
         <div className="ob-toolbar">
-          <div className="ob-search-wrap">
-            <span className="ob-search-icon" aria-hidden>
-              ⌕
-            </span>
-            <input
-              type="search"
-              className="ob-search"
-              placeholder="Cerca per nome obiettivo..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            {search && (
-              <button
-                type="button"
-                className="ob-search-clear"
-                aria-label="Cancella ricerca"
-                onClick={() => setSearch("")}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
           <div className="ob-filter-row">
             {FILTERS.map((f) => (
               <FilterPill

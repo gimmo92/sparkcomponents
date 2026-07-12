@@ -1147,12 +1147,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   margin-bottom: 20px;
 }
 
 .ob-top-actions {
   display: flex;
   gap: 12px;
+}
+
+.ob-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
 }
 
 .btn-lg {
@@ -1174,19 +1182,14 @@
   box-shadow: 0 8px 18px rgba(47, 159, 224, 0.35);
 }
 
-/* toolbar: search + notion-style filters */
+/* toolbar: notion-style filters */
 .ob-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   margin-bottom: 18px;
-  flex-wrap: wrap;
 }
 
 .ob-search-wrap {
   position: relative;
-  flex: 0 1 260px;
-  min-width: 180px;
+  width: 280px;
 }
 
 .ob-search-icon {
@@ -1497,14 +1500,17 @@
 }
 
 @media (max-width: 900px) {
-  .ob-toolbar {
-    flex-direction: column;
-    align-items: stretch;
+  .ob-topbar {
+    flex-wrap: wrap;
+  }
+
+  .ob-topbar-right {
+    width: 100%;
   }
 
   .ob-search-wrap {
-    flex: none;
-    width: 100%;
+    flex: 1;
+    width: auto;
   }
 
   .ob-grid {
