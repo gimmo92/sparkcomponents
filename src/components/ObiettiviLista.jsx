@@ -13,6 +13,24 @@ const NAV = [
   { icon: "▧", label: "Formazione", caret: true },
 ];
 
+const ASSIGNMENT_TARGETS = {
+  Utenti: [
+    "Martina Verdi",
+    "Marco Rossi",
+    "Giulia Bianchi",
+    "Luca Ferrari",
+    "Sara Conti",
+  ],
+  Società: ["Spark Holding", "Spark Italia", "Spark Labs", "Spark Digital"],
+  "Di team": ["Finance", "Sales", "Marketing", "Operations", "HR"],
+};
+
+const ASSIGNMENT_TARGET_LABELS = {
+  Utenti: "Utenti",
+  Società: "Società",
+  "Di team": "Team",
+};
+
 const CARDS = [
   {
     id: 1,
@@ -44,6 +62,7 @@ const CARDS = [
     progress: 2,
     stato: "In corso",
     assegnazione: "Di team",
+    team: "Finance",
     tipo: "Quantitativo",
     anno: "2027",
   },
@@ -55,6 +74,31 @@ const CARDS = [
     progress: 100,
     stato: "In corso",
     assegnazione: "Società",
+    societa: "Spark Italia",
+    tipo: "Qualitativo",
+    anno: "2026",
+  },
+  {
+    id: 5,
+    title: "Riduzione churn clienti",
+    entro: "30/06/2026",
+    valore: "4,2 / 5,0 %",
+    progress: 84,
+    stato: "In corso",
+    assegnazione: "Utenti",
+    utenti: ["Martina Verdi", "Marco Rossi"],
+    tipo: "Quantitativo",
+    anno: "2026",
+  },
+  {
+    id: 6,
+    title: "Net Promoter Score",
+    entro: "31/12/2026",
+    valore: "72 / 80",
+    progress: 90,
+    stato: "In corso",
+    assegnazione: "Utenti",
+    utenti: ["Giulia Bianchi"],
     tipo: "Qualitativo",
     anno: "2026",
   },
@@ -112,6 +156,89 @@ const DEFAULT_FILTER_VALUES = Object.fromEntries(
 function parseDate(str) {
   const [d, m, y] = str.split("/").map(Number);
   return new Date(y, m - 1, d);
+}
+
+function FilterMultiPill({ label, icon, options, selected, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const isActive = selected.length > 0;
+
+  const summary =
+    selected.length === 0
+      ? `Seleziona ${label.toLowerCase()}`
+      : selected.length === 1
+        ? selected[0]
+        : `${selected.length} selezionati`;
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => {
+      if (!ref.current?.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  const toggle = (option) => {
+    onChange(
+      selected.includes(option)
+        ? selected.filter((x) => x !== option)
+        : [...selected, option]
+    );
+  };
+
+  return (
+    <div className="ob-filter-pill-wrap" ref={ref}>
+      <button
+        type="button"
+        className={`ob-filter-pill${open ? " ob-filter-pill--open" : ""}${isActive ? " ob-filter-pill--active" : ""}`}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span className="ob-filter-pill-icon" aria-hidden>
+          {icon}
+        </span>
+        <span className="ob-filter-pill-label">{summary}</span>
+        <span className="ob-filter-pill-chevron" aria-hidden>
+          ▾
+        </span>
+      </button>
+
+      {open && (
+        <div className="ob-filter-popover ob-filter-popover--multi">
+          <div className="ob-filter-multi-actions">
+            <button
+              type="button"
+              className="ob-filter-multi-action"
+              onClick={() => onChange([...options])}
+            >
+              Seleziona tutti
+            </button>
+            {selected.length > 0 && (
+              <button
+                type="button"
+                className="ob-filter-multi-action"
+                onClick={() => onChange([])}
+              >
+                Deseleziona
+              </button>
+            )}
+          </div>
+          {options.map((option) => (
+            <label key={option} className="ob-filter-check">
+              <input
+                type="checkbox"
+                checked={selected.includes(option)}
+                onChange={() => toggle(option)}
+              />
+              <span className="ob-filter-check-box" />
+              <span className="ob-filter-check-label">{option}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function FilterPill({ filter, value, onChange }) {
@@ -182,10 +309,30 @@ function FilterPill({ filter, value, onChange }) {
   );
 }
 
+function cardMatchesAssignmentTarget(card, assegnazione, targets) {
+  if (targets.length === 0) return true;
+  if (assegnazione === "Utenti") {
+    return card.utenti?.some((u) => targets.includes(u));
+  }
+  if (assegnazione === "Società") {
+    return targets.includes(card.societa);
+  }
+  if (assegnazione === "Di team") {
+    return targets.includes(card.team);
+  }
+  return true;
+}
+
 export default function ObiettiviLista() {
   const [selected, setSelected] = useState([]);
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState(DEFAULT_FILTER_VALUES);
+  const [assignmentTargets, setAssignmentTargets] = useState([]);
+
+  const assegnazione = filterValues.assegnazione;
+  const showAssignmentMulti = assegnazione in ASSIGNMENT_TARGETS;
+  const assignmentOptions = ASSIGNMENT_TARGETS[assegnazione] ?? [];
+  const assignmentLabel = ASSIGNMENT_TARGET_LABELS[assegnazione] ?? "";
 
   const visibleCards = useMemo(() => {
     let list = [...CARDS];
@@ -195,13 +342,18 @@ export default function ObiettiviLista() {
       list = list.filter((c) => c.title.toLowerCase().includes(query));
     }
 
-    const { stato, assegnazione, tipo, anno, sortBy, sortDir } = filterValues;
+    const { stato, tipo, anno, sortBy, sortDir } = filterValues;
 
     if (stato !== "Tutti") {
       list = list.filter((c) => c.stato === stato);
     }
     if (assegnazione !== "Tutti") {
       list = list.filter((c) => c.assegnazione === assegnazione);
+      if (showAssignmentMulti) {
+        list = list.filter((c) =>
+          cardMatchesAssignmentTarget(c, assegnazione, assignmentTargets)
+        );
+      }
     }
     if (tipo !== "Tutti") {
       list = list.filter((c) => c.tipo === tipo);
@@ -220,7 +372,7 @@ export default function ObiettiviLista() {
     });
 
     return list;
-  }, [search, filterValues]);
+  }, [search, filterValues, assegnazione, showAssignmentMulti, assignmentTargets]);
 
   const visibleIds = visibleCards.map((c) => c.id);
   const allSelected =
@@ -234,8 +386,10 @@ export default function ObiettiviLista() {
   const toggleAll = () =>
     setSelected(allSelected ? [] : visibleIds);
 
-  const setFilter = (id, value) =>
+  const setFilter = (id, value) => {
     setFilterValues((prev) => ({ ...prev, [id]: value }));
+    if (id === "assegnazione") setAssignmentTargets([]);
+  };
 
   return (
     <div className="ob-layout">
@@ -309,6 +463,15 @@ export default function ObiettiviLista() {
                 onChange={(v) => setFilter(f.id, v)}
               />
             ))}
+            {showAssignmentMulti && (
+              <FilterMultiPill
+                label={assignmentLabel}
+                icon="☑"
+                options={assignmentOptions}
+                selected={assignmentTargets}
+                onChange={setAssignmentTargets}
+              />
+            )}
           </div>
         </div>
 
