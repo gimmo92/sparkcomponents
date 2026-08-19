@@ -1,0 +1,12 @@
+---
+description: After every change, commit and push to origin/main without waiting to be asked.
+alwaysApply: true
+---
+
+# Auto commit and push
+
+After every completed code change in this project, commit to `main` and `git push origin main` without waiting for the user to ask.
+
+- Follow the existing commit-message style (English, one sentence, focus on why).
+- Do not skip hooks, force-push, or amend unless the user explicitly asks.
+- Do not wait for a second "pusha" in this repo.

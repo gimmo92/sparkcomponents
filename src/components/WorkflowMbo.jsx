@@ -36,6 +36,35 @@ const ASSIGNMENT_TYPES = [
   { id: "societa", icon: "🏛️", label: "Società" },
 ];
 
+const STEP_META = {
+  creazione: {
+    title: "Creazione scheda",
+    hint: "Chi può creare la scheda MBO.",
+  },
+  modifica: {
+    title: "Modifica",
+    hint: "Chi può modificare la scheda in questo passaggio.",
+  },
+  approva: {
+    title: "Approva",
+    hint: "Chi deve approvare la scheda in questo passaggio.",
+  },
+  "definisci-obiettivi": {
+    title: "Definisci obiettivi",
+    hint: "Chi definisce gli obiettivi della scheda in questo passaggio.",
+  },
+  conferma: {
+    title: "Conferma scheda",
+    hint: "Chi conferma e chiude la scheda.",
+  },
+};
+
+const ADDABLE_KINDS = [
+  { id: "modifica", label: "Aggiungi modifica", className: "btn-add-level" },
+  { id: "approva", label: "Aggiungi approva", className: "btn-reuse" },
+  { id: "definisci-obiettivi", label: "Aggiungi definisci obiettivi", className: "btn-reuse" },
+];
+
 const ASSIGNMENT_MULTI = {
   utenti: {
     label: "Utenti assegnati",
@@ -131,7 +160,8 @@ function WorkflowList({ workflows, onCreate }) {
           <span className="eyebrow">WORKFLOW MBO</span>
           <h1 className="wf-page-title">Workflow MBO</h1>
           <p className="wf-page-sub">
-            Definisci i flussi di creazione, modifica, approvazione e conferma delle schede.
+            Definisci i flussi di creazione, modifica, approvazione, obiettivi e conferma delle
+            schede.
           </p>
         </div>
         <button className="btn-cta" type="button" onClick={onCreate}>
@@ -164,17 +194,7 @@ function WorkflowList({ workflows, onCreate }) {
               <p className="ob-line">
                 <strong>Step:</strong>{" "}
                 {wf.flowSteps
-                  .map((s) => {
-                    const kind =
-                      s.kind === "creazione"
-                        ? "Creazione scheda"
-                        : s.kind === "conferma"
-                          ? "Conferma scheda"
-                          : s.kind === "modifica"
-                            ? "Modifica"
-                            : "Approva";
-                    return `${kind} (${assigneeLabel(s)})`;
-                  })
+                  .map((s) => `${STEP_META[s.kind]?.title ?? s.kind} (${assigneeLabel(s)})`)
                   .join(" → ")}
               </p>
               <p className="ob-line">
@@ -362,21 +382,13 @@ export default function WorkflowMbo() {
         <div className="card card--wf">
           <h2 className="card-title">Step del workflow</h2>
           <p className="card-sub">
-            La creazione e la conferma scheda sono fisse. Aggiungi nel mezzo gli step di modifica o
-            approvazione.
+            La creazione e la conferma scheda sono fisse. Aggiungi nel mezzo gli step di modifica,
+            approvazione o definizione obiettivi.
           </p>
 
           <ol className="wf-flow">
             {form.flowSteps.map((step, index) => {
-              const isCreate = step.kind === "creazione";
-              const isConfirm = step.kind === "conferma";
-              const title = isCreate
-                ? "Creazione scheda"
-                : isConfirm
-                  ? "Conferma scheda"
-                  : step.kind === "modifica"
-                    ? "Modifica"
-                    : "Approva";
+              const meta = STEP_META[step.kind];
 
               return (
                 <li className="wf-flow-item" key={step.id}>
@@ -384,7 +396,7 @@ export default function WorkflowMbo() {
                   <div className="wf-flow-body">
                     <div className="wf-flow-head">
                       <div>
-                        <h3 className="wf-flow-title">{title}</h3>
+                        <h3 className="wf-flow-title">{meta.title}</h3>
                         {step.locked && <span className="wf-lock">Obbligatorio</span>}
                       </div>
                       {!step.locked && (
@@ -396,6 +408,7 @@ export default function WorkflowMbo() {
                           >
                             <option value="modifica">Modifica</option>
                             <option value="approva">Approva</option>
+                            <option value="definisci-obiettivi">Definisci obiettivi</option>
                           </select>
                           <button
                             className="btn-x"
@@ -408,15 +421,7 @@ export default function WorkflowMbo() {
                         </div>
                       )}
                     </div>
-                    <p className="wf-flow-hint">
-                      {isCreate
-                        ? "Chi può creare la scheda MBO."
-                        : isConfirm
-                          ? "Chi conferma e chiude la scheda."
-                          : step.kind === "modifica"
-                            ? "Chi può modificare la scheda in questo passaggio."
-                            : "Chi deve approvare la scheda in questo passaggio."}
-                    </p>
+                    <p className="wf-flow-hint">{meta.hint}</p>
                     <AssigneePicker step={step} onChange={updateStep} />
                   </div>
                 </li>
@@ -425,16 +430,16 @@ export default function WorkflowMbo() {
           </ol>
 
           <div className="wf-add-row">
-            <button
-              className="btn-add-level"
-              type="button"
-              onClick={() => addFlowStep("modifica")}
-            >
-              <span aria-hidden>＋</span> Aggiungi modifica
-            </button>
-            <button className="btn-reuse" type="button" onClick={() => addFlowStep("approva")}>
-              <span aria-hidden>＋</span> Aggiungi approva
-            </button>
+            {ADDABLE_KINDS.map((kind) => (
+              <button
+                key={kind.id}
+                className={kind.className}
+                type="button"
+                onClick={() => addFlowStep(kind.id)}
+              >
+                <span aria-hidden>＋</span> {kind.label}
+              </button>
+            ))}
           </div>
 
           <div className="footer-actions">
