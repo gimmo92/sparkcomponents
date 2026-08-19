@@ -41,12 +41,8 @@ const STEP_META = {
     title: "Creazione scheda",
     hint: "Chi può creare la scheda MBO.",
   },
-  modifica: {
-    title: "Modifica",
-    hint: "Chi può modificare la scheda in questo passaggio.",
-  },
   approva: {
-    title: "Approva",
+    title: "Approvazione",
     hint: "Chi deve approvare la scheda in questo passaggio.",
   },
   "definisci-obiettivi": {
@@ -60,8 +56,7 @@ const STEP_META = {
 };
 
 const ADDABLE_KINDS = [
-  { id: "modifica", label: "Aggiungi modifica", className: "btn-add-level" },
-  { id: "approva", label: "Aggiungi approva", className: "btn-reuse" },
+  { id: "approva", label: "Aggiungi approvazione", className: "btn-add-level" },
   { id: "definisci-obiettivi", label: "Aggiungi definisci obiettivi", className: "btn-reuse" },
 ];
 
@@ -160,8 +155,7 @@ function WorkflowList({ workflows, onCreate }) {
           <span className="eyebrow">WORKFLOW MBO</span>
           <h1 className="wf-page-title">Workflow MBO</h1>
           <p className="wf-page-sub">
-            Definisci i flussi di creazione, modifica, approvazione, obiettivi e conferma delle
-            schede.
+            Definisci i flussi di creazione, approvazione, obiettivi e conferma delle schede.
           </p>
         </div>
         <button className="btn-cta" type="button" onClick={onCreate}>
@@ -382,7 +376,7 @@ export default function WorkflowMbo() {
         <div className="card card--wf">
           <h2 className="card-title">Step del workflow</h2>
           <p className="card-sub">
-            La creazione e la conferma scheda sono fisse. Aggiungi nel mezzo gli step di modifica,
+            La creazione e la conferma scheda sono fisse. Aggiungi nel mezzo gli step di
             approvazione o definizione obiettivi.
           </p>
 
@@ -406,8 +400,7 @@ export default function WorkflowMbo() {
                             value={step.kind}
                             onChange={(e) => updateStep({ ...step, kind: e.target.value })}
                           >
-                            <option value="modifica">Modifica</option>
-                            <option value="approva">Approva</option>
+                            <option value="approva">Approvazione</option>
                             <option value="definisci-obiettivi">Definisci obiettivi</option>
                           </select>
                           <button
