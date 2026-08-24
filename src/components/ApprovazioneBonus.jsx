@@ -330,7 +330,7 @@ function EmptyState({ title, text, actionLabel, onAction }) {
 }
 
 export default function ApprovazioneBonus() {
-  const [view, setView] = useState("avanzamento");
+  const [view, setView] = useState("compila");
   const [bonuses, setBonuses] = useState(seedBonuses);
   const [draft, setDraft] = useState(null);
   const [fillDraft, setFillDraft] = useState(null);
@@ -365,7 +365,7 @@ export default function ApprovazioneBonus() {
     };
     setBonuses((prev) => [created, ...prev]);
     setDraft(null);
-    setView("avanzamento");
+    setView("compila");
   };
 
   const importFromFile = async (file) => {
@@ -608,60 +608,47 @@ export default function ApprovazioneBonus() {
 }
 
 function ProgressBoard({ bonuses, expandedId, onToggle }) {
-  const [open, setOpen] = useState(false);
-
   return (
     <div className="ab-progress">
-      <button
-        className={`btn-cta ab-detail-toggle${open ? " ab-detail-toggle--open" : ""}`}
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
-        {open ? "Chiudi dettaglio processo" : "Dettaglio processo"}
-      </button>
-
-      {open && (
-        <div className="ab-table-wrap">
-          <h3 className="ab-table-title">Dettaglio processo</h3>
-          <table className="ab-table">
-            <thead>
-              <tr>
-                <th>Scheda</th>
-                <th>Stato</th>
-                <th>Pipeline</th>
-                <th />
+      <div className="ab-table-wrap">
+        <h3 className="ab-table-title">Avanzamento</h3>
+        <table className="ab-table">
+          <thead>
+            <tr>
+              <th>Scheda</th>
+              <th>Stato</th>
+              <th>Pipeline</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {bonuses.map((b) => (
+              <tr key={b.id} className={expandedId === b.id ? "open" : ""}>
+                <td>
+                  <button type="button" className="ab-link" onClick={() => onToggle(b.id)}>
+                    {b.title}
+                  </button>
+                  <div className="ab-muted">{b.users.map(userLabel).join(", ")}</div>
+                </td>
+                <td>
+                  <StatusBadge status={b.status} />
+                </td>
+                <td>
+                  <PipelineDots status={b.status} />
+                </td>
+                <td>
+                  <button type="button" className="ab-link" onClick={() => onToggle(b.id)}>
+                    {expandedId === b.id ? "Chiudi" : "Cronologia"}
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {bonuses.map((b) => (
-                <tr key={b.id} className={expandedId === b.id ? "open" : ""}>
-                  <td>
-                    <button type="button" className="ab-link" onClick={() => onToggle(b.id)}>
-                      {b.title}
-                    </button>
-                    <div className="ab-muted">{b.users.map(userLabel).join(", ")}</div>
-                  </td>
-                  <td>
-                    <StatusBadge status={b.status} />
-                  </td>
-                  <td>
-                    <PipelineDots status={b.status} />
-                  </td>
-                  <td>
-                    <button type="button" className="ab-link" onClick={() => onToggle(b.id)}>
-                      {expandedId === b.id ? "Chiudi" : "Cronologia"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {expandedId && (
-            <HistoryPanel bonus={bonuses.find((b) => b.id === expandedId)} />
-          )}
-        </div>
-      )}
+            ))}
+          </tbody>
+        </table>
+        {expandedId && (
+          <HistoryPanel bonus={bonuses.find((b) => b.id === expandedId)} />
+        )}
+      </div>
     </div>
   );
 }

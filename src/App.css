@@ -2086,12 +2086,7 @@
 .ab-progress {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 18px;
-}
-
-.ab-detail-toggle {
-  align-self: flex-start;
 }
 
 .ab-table-wrap {
