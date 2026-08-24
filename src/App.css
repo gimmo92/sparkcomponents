@@ -2086,98 +2086,12 @@
 .ab-progress {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 18px;
 }
 
-.ab-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-
-.ab-stat {
-  background: #fff;
-  border-radius: 14px;
-  padding: 16px 18px;
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.ab-stat-n {
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--navy);
-  line-height: 1;
-}
-
-.ab-stat-l {
-  font-size: 12.5px;
-  color: var(--label);
-}
-
-.ab-kanban {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  align-items: start;
-}
-
-.ab-col {
-  background: #eef2f8;
-  border-radius: 14px;
-  padding: 12px;
-  min-height: 180px;
-}
-
-.ab-col-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.ab-col-head h3 {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--navy);
-}
-
-.ab-col-empty {
-  margin: 8px 4px;
-  font-size: 12.5px;
-  color: var(--muted);
-}
-
-.ab-kanban-card {
-  width: 100%;
-  text-align: left;
-  background: #fff;
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin-bottom: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  box-shadow: 0 4px 10px rgba(26, 42, 82, 0.06);
-}
-
-.ab-kanban-card strong {
-  font-size: 13.5px;
-  color: var(--navy);
-}
-
-.ab-kanban-card span {
-  font-size: 12px;
-  color: var(--label);
-}
-
-.ab-kanban-card em {
-  font-size: 12px;
-  color: #b42318;
-  font-style: normal;
+.ab-detail-toggle {
+  align-self: flex-start;
 }
 
 .ab-table-wrap {
@@ -2185,6 +2099,7 @@
   border-radius: 16px;
   padding: 18px 20px 8px;
   box-shadow: var(--shadow);
+  width: 100%;
 }
 
 .ab-table-title {
@@ -2283,8 +2198,6 @@
 }
 
 @media (max-width: 1100px) {
-  .ab-kanban,
-  .ab-stats,
   .ab-inbox-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -2331,8 +2244,6 @@
     justify-content: flex-start;
   }
 
-  .ab-kanban,
-  .ab-stats,
   .ab-inbox-grid {
     grid-template-columns: 1fr;
   }

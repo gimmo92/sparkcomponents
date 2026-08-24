@@ -344,7 +344,6 @@ export default function ApprovazioneBonus() {
       manager: bonuses.filter((b) => b.status === STATUS.MANAGER_FILL).length,
       hr: bonuses.filter((b) => b.status === STATUS.HR_APPROVE).length,
       compliance: bonuses.filter((b) => b.status === STATUS.COMPLIANCE).length,
-      published: bonuses.filter((b) => b.status === STATUS.PUBLISHED).length,
     }),
     [bonuses]
   );
@@ -574,7 +573,6 @@ export default function ApprovazioneBonus() {
       {view === "avanzamento" && (
         <ProgressBoard
           bonuses={bonuses}
-          counts={counts}
           expandedId={expandedId}
           onToggle={(id) => setExpandedId((cur) => (cur === id ? null : id))}
         />
@@ -609,96 +607,61 @@ export default function ApprovazioneBonus() {
   );
 }
 
-function ProgressBoard({ bonuses, counts, expandedId, onToggle }) {
-  const columns = [
-    { id: STATUS.MANAGER_FILL, title: "Da compilare", count: counts.manager },
-    { id: STATUS.HR_APPROVE, title: "Approvazione HR", count: counts.hr },
-    { id: STATUS.COMPLIANCE, title: "Compliance", count: counts.compliance },
-    { id: STATUS.PUBLISHED, title: "Pubblicati", count: counts.published },
-  ];
+function ProgressBoard({ bonuses, expandedId, onToggle }) {
+  const [open, setOpen] = useState(false);
 
   return (
     <div className="ab-progress">
-      <div className="ab-stats">
-        {columns.map((col) => (
-          <div className="ab-stat" key={col.id}>
-            <span className="ab-stat-n">{col.count}</span>
-            <span className="ab-stat-l">{col.title}</span>
-          </div>
-        ))}
-      </div>
+      <button
+        className={`btn-cta ab-detail-toggle${open ? " ab-detail-toggle--open" : ""}`}
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {open ? "Chiudi dettaglio processo" : "Dettaglio processo"}
+      </button>
 
-      <div className="ab-kanban">
-        {columns.map((col) => {
-          const items = bonuses.filter((b) => b.status === col.id);
-          return (
-            <section className="ab-col" key={col.id}>
-              <header className="ab-col-head">
-                <h3>{col.title}</h3>
-                <span className="ab-count">{col.count}</span>
-              </header>
-              {items.length === 0 ? (
-                <p className="ab-col-empty">Nessuna scheda</p>
-              ) : (
-                items.map((b) => (
-                  <button
-                    type="button"
-                    className="ab-kanban-card"
-                    key={b.id}
-                    onClick={() => onToggle(b.id)}
-                  >
-                    <strong>{b.title}</strong>
-                    <span>
-                      {b.users.map(userLabel).join(", ")} · {b.cycle}
-                    </span>
-                    {b.rejection && <em>Rifiutata — in ricompilazione</em>}
-                  </button>
-                ))
-              )}
-            </section>
-          );
-        })}
-      </div>
-
-      <div className="ab-table-wrap">
-        <h3 className="ab-table-title">Dettaglio processo</h3>
-        <table className="ab-table">
-          <thead>
-            <tr>
-              <th>Scheda</th>
-              <th>Stato</th>
-              <th>Pipeline</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {bonuses.map((b) => (
-              <tr key={b.id} className={expandedId === b.id ? "open" : ""}>
-                <td>
-                  <button type="button" className="ab-link" onClick={() => onToggle(b.id)}>
-                    {b.title}
-                  </button>
-                  <div className="ab-muted">{b.users.map(userLabel).join(", ")}</div>
-                </td>
-                <td>
-                  <StatusBadge status={b.status} />
-                </td>
-                <td>
-                  <PipelineDots status={b.status} />
-                </td>
-                <td>
-                  <button type="button" className="ab-link" onClick={() => onToggle(b.id)}>
-                    {expandedId === b.id ? "Chiudi" : "Cronologia"}
-                  </button>
-                </td>
+      {open && (
+        <div className="ab-table-wrap">
+          <h3 className="ab-table-title">Dettaglio processo</h3>
+          <table className="ab-table">
+            <thead>
+              <tr>
+                <th>Scheda</th>
+                <th>Stato</th>
+                <th>Pipeline</th>
+                <th />
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {expandedId && (
-          <HistoryPanel bonus={bonuses.find((b) => b.id === expandedId)} />
-        )}
-      </div>
+            </thead>
+            <tbody>
+              {bonuses.map((b) => (
+                <tr key={b.id} className={expandedId === b.id ? "open" : ""}>
+                  <td>
+                    <button type="button" className="ab-link" onClick={() => onToggle(b.id)}>
+                      {b.title}
+                    </button>
+                    <div className="ab-muted">{b.users.map(userLabel).join(", ")}</div>
+                  </td>
+                  <td>
+                    <StatusBadge status={b.status} />
+                  </td>
+                  <td>
+                    <PipelineDots status={b.status} />
+                  </td>
+                  <td>
+                    <button type="button" className="ab-link" onClick={() => onToggle(b.id)}>
+                      {expandedId === b.id ? "Chiudi" : "Cronologia"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {expandedId && (
+            <HistoryPanel bonus={bonuses.find((b) => b.id === expandedId)} />
+          )}
+        </div>
+      )}
     </div>
   );
 }
