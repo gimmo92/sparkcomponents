@@ -118,83 +118,98 @@ function ObjectiveBlock({ obj, onChange, onAddRow, onRemoveRow, readOnly }) {
         <DetailRow label="Unità di misura" value={obj.unita} />
         <DetailRow label="Tipologia obiettivo" value={obj.tipologia} />
         <DetailRow label="Descrizione" value={obj.descrizione} />
+        {readOnly && (
+          <>
+            <DetailRow label="Peso obiettivo" value={obj.peso} />
+            <DetailRow label="Modalità di calcolo" value={obj.modalita} />
+          </>
+        )}
       </dl>
 
-      <div className="field-row">
-        <div className="field">
-          <label>Peso obiettivo:</label>
-          <input
-            className="input"
-            value={obj.peso}
-            readOnly={readOnly}
-            onChange={(e) => onChange({ ...obj, peso: e.target.value })}
-          />
+      {readOnly ? (
+        <div className="ab-payout-static">
+          {obj.rows.map((row) => (
+            <div className="ab-payout-static-row" key={row.id}>
+              <span>
+                Livello di risultato: <strong>{row.livello || "—"}</strong>
+              </span>
+              <span>
+                % Payout: <strong>{row.payout || "—"}</strong>
+              </span>
+            </div>
+          ))}
         </div>
-        <div className="field">
-          <label>Modalità di calcolo:</label>
-          <select
-            className="select"
-            value={obj.modalita}
-            disabled={readOnly}
-            onChange={(e) => onChange({ ...obj, modalita: e.target.value })}
-          >
-            <option>Lineare</option>
-            <option>A scaglioni</option>
-            <option>A gradini</option>
-          </select>
-        </div>
-      </div>
-
-      {obj.rows.map((row) => (
-        <div className="payout-row" key={row.id}>
-          <div className="payout">
-            <label>Livello di risultato (Target {obj.target})</label>
-            <input
-              className="input"
-              value={row.livello}
-              readOnly={readOnly}
-              onChange={(e) =>
-                onChange({
-                  ...obj,
-                  rows: obj.rows.map((r) =>
-                    r.id === row.id ? { ...r, livello: e.target.value } : r
-                  ),
-                })
-              }
-            />
+      ) : (
+        <>
+          <div className="field-row">
+            <div className="field">
+              <label>Peso obiettivo:</label>
+              <input
+                className="input"
+                value={obj.peso}
+                onChange={(e) => onChange({ ...obj, peso: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label>Modalità di calcolo:</label>
+              <select
+                className="select"
+                value={obj.modalita}
+                onChange={(e) => onChange({ ...obj, modalita: e.target.value })}
+              >
+                <option>Lineare</option>
+                <option>A scaglioni</option>
+                <option>A gradini</option>
+              </select>
+            </div>
           </div>
-          <div className="payout">
-            <label>% Payout:</label>
-            <input
-              className="input"
-              value={row.payout}
-              readOnly={readOnly}
-              onChange={(e) =>
-                onChange({
-                  ...obj,
-                  rows: obj.rows.map((r) =>
-                    r.id === row.id ? { ...r, payout: e.target.value } : r
-                  ),
-                })
-              }
-            />
-          </div>
-          {!readOnly && (
-            <button
-              className="btn-remove"
-              type="button"
-              onClick={() => onRemoveRow(obj.id, row.id)}
-            >
-              RIMUOVI
-            </button>
-          )}
-        </div>
-      ))}
 
-      {!readOnly && (
-        <button className="btn-add" type="button" onClick={() => onAddRow(obj.id)}>
-          AGGIUNGI
-        </button>
+          {obj.rows.map((row) => (
+            <div className="payout-row" key={row.id}>
+              <div className="payout">
+                <label>Livello di risultato (Target {obj.target})</label>
+                <input
+                  className="input"
+                  value={row.livello}
+                  onChange={(e) =>
+                    onChange({
+                      ...obj,
+                      rows: obj.rows.map((r) =>
+                        r.id === row.id ? { ...r, livello: e.target.value } : r
+                      ),
+                    })
+                  }
+                />
+              </div>
+              <div className="payout">
+                <label>% Payout:</label>
+                <input
+                  className="input"
+                  value={row.payout}
+                  onChange={(e) =>
+                    onChange({
+                      ...obj,
+                      rows: obj.rows.map((r) =>
+                        r.id === row.id ? { ...r, payout: e.target.value } : r
+                      ),
+                    })
+                  }
+                />
+              </div>
+              <button
+                className="btn-remove"
+                type="button"
+                onClick={() => onRemoveRow(obj.id, row.id)}
+              >
+                RIMUOVI
+              </button>
+            </div>
+          ))}
+
+          <button className="btn-add" type="button" onClick={() => onAddRow(obj.id)}>
+            AGGIUNGI
+          </button>
+        </>
       )}
     </div>
   );

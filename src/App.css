@@ -2184,6 +2184,30 @@
   border-top: 1px solid var(--border);
 }
 
+.ab-payout-static {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.ab-payout-static-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  background: #f7f9fd;
+  border: 1px solid #eef1f8;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  color: var(--label);
+}
+
+.ab-payout-static-row strong {
+  color: var(--navy);
+  font-weight: 700;
+}
+
 .modal--reject {
   max-width: 520px;
 }
