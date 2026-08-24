@@ -1,11 +1,13 @@
 import { useState } from "react";
 import "./App.css";
+import ApprovazioneBonus from "./components/ApprovazioneBonus";
 import BonusObiettivi from "./components/BonusObiettivi";
 import NuovoObiettivo from "./components/NuovoObiettivo";
 import ObiettiviLista from "./components/ObiettiviLista";
 import WorkflowMbo from "./components/WorkflowMbo";
 
 const TABS = [
+  { id: "schede-bonus", label: "Schede Bonus", component: ApprovazioneBonus },
   { id: "workflow", label: "Workflow MBO", component: WorkflowMbo },
   { id: "bonus", label: "Bonus · Obiettivi", component: BonusObiettivi },
   { id: "mbo", label: "Nuovo Obiettivo MBO", component: NuovoObiettivo },
@@ -13,7 +15,7 @@ const TABS = [
 ];
 
 export default function App() {
-  const [active, setActive] = useState("workflow");
+  const [active, setActive] = useState("schede-bonus");
   const Active = TABS.find((t) => t.id === active).component;
 
   return (
