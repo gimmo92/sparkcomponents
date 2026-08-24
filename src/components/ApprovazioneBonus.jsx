@@ -302,7 +302,6 @@ function InboxCard({ bonus, actionLabel, onAction }) {
           <strong>Rifiutata da {bonus.rejection.by}:</strong> {bonus.rejection.reason}
         </div>
       )}
-      <PipelineDots status={bonus.status} />
       {actionLabel && (
         <button className="btn-cta ab-inbox-cta" type="button" onClick={onAction}>
           {actionLabel}
