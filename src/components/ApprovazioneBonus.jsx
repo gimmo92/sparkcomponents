@@ -1,15 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import BonusSchedaForm, {
+  BONUS_USERS,
   SchedaReadonly,
   cloneObjectives,
   userLabel,
 } from "./BonusSchedaForm";
-
-const ROLES = [
-  { id: "hr", label: "HR", hint: "Crea, approva e monitora" },
-  { id: "manager", label: "Manager", hint: "Compila le schede" },
-  { id: "compliance", label: "Compliance", hint: "Approva o rifiuta" },
-];
 
 const STATUS = {
   MANAGER_FILL: "manager_fill",
@@ -22,7 +17,7 @@ const PIPELINE = [
   { id: STATUS.MANAGER_FILL, label: "Manager", short: "Compilazione" },
   { id: STATUS.HR_APPROVE, label: "HR", short: "Approvazione HR" },
   { id: STATUS.COMPLIANCE, label: "Compliance", short: "Compliance" },
-  { id: STATUS.PUBLISHED, label: "Pubblicato", short: "Lista bonus" },
+  { id: STATUS.PUBLISHED, label: "Pubblicato", short: "Pubblicato" },
 ];
 
 const STATUS_META = {
@@ -55,6 +50,67 @@ function nowStamp() {
 
 function event(actor, action, note = "") {
   return { at: nowStamp(), actor, action, note };
+}
+
+function resolveUser(value) {
+  const q = String(value).trim().toLowerCase();
+  if (!q) return null;
+  return (
+    BONUS_USERS.find(
+      (u) => u.id === q || u.label.toLowerCase().includes(q)
+    )?.id ?? null
+  );
+}
+
+function parseImportedSchede(text, filename) {
+  const trimmed = text.replace(/^\uFEFF/, "").trim();
+  const isJson =
+    filename.toLowerCase().endsWith(".json") ||
+    trimmed.startsWith("[") ||
+    trimmed.startsWith("{");
+
+  let rows = [];
+  if (isJson) {
+    const data = JSON.parse(trimmed);
+    rows = Array.isArray(data) ? data : (data.schede ?? data.bonus ?? []);
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new Error("Il JSON non contiene schede da importare.");
+    }
+  } else {
+    const lines = trimmed.split(/\r?\n/).filter(Boolean);
+    if (lines.length < 2) {
+      throw new Error("Il CSV deve avere intestazione e almeno una riga.");
+    }
+    const sep = lines[0].includes(";") ? ";" : ",";
+    const headers = lines[0].split(sep).map((h) => h.trim().toLowerCase());
+    const col = (...names) => names.reduce((acc, n) => (acc >= 0 ? acc : headers.indexOf(n)), -1);
+    const t = col("titolo", "title", "bonus");
+    const u = col("utenti", "users", "utente");
+    const c = col("ciclo", "cycle", "anno");
+    rows = lines.slice(1).map((line) => {
+      const cols = line.split(sep).map((x) => x.trim());
+      return {
+        title: cols[t >= 0 ? t : 0],
+        users: cols[u >= 0 ? u : 1] ?? "",
+        cycle: cols[c >= 0 ? c : 2] ?? "2026",
+      };
+    });
+  }
+
+  return rows.map((row, i) => {
+    const title = String(row.title ?? row.titolo ?? "").trim();
+    if (!title) throw new Error(`Riga ${i + 1}: manca il titolo.`);
+    const rawUsers = row.users ?? row.utenti ?? [];
+    const userIds = (Array.isArray(rawUsers) ? rawUsers : String(rawUsers).split(/[;,]/))
+      .map(resolveUser)
+      .filter(Boolean);
+    return {
+      title,
+      users: userIds,
+      cycle: String(row.cycle ?? row.ciclo ?? "2026"),
+      objectives: row.objectives ? cloneObjectives(row.objectives) : cloneObjectives(),
+    };
+  });
 }
 
 function seedBonuses() {
@@ -274,13 +330,14 @@ function EmptyState({ title, text, actionLabel, onAction }) {
 }
 
 export default function ApprovazioneBonus() {
-  const [role, setRole] = useState("hr");
-  const [hrView, setHrView] = useState("crea");
+  const [view, setView] = useState("avanzamento");
   const [bonuses, setBonuses] = useState(seedBonuses);
   const [draft, setDraft] = useState(null);
   const [fillDraft, setFillDraft] = useState(null);
   const [rejecting, setRejecting] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+  const [importError, setImportError] = useState("");
+  const fileRef = useRef(null);
 
   const counts = useMemo(
     () => ({
@@ -297,7 +354,6 @@ export default function ApprovazioneBonus() {
 
   const startCreate = () => {
     setDraft(emptyDraft());
-    setHrView("crea");
   };
 
   const submitCreate = () => {
@@ -310,7 +366,28 @@ export default function ApprovazioneBonus() {
     };
     setBonuses((prev) => [created, ...prev]);
     setDraft(null);
-    setHrView("avanzamento");
+    setView("avanzamento");
+  };
+
+  const importFromFile = async (file) => {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const rows = parseImportedSchede(text, file.name);
+      const created = rows.map((row) => ({
+        ...emptyDraft(),
+        ...row,
+        id: ++nextBonusId,
+        status: STATUS.MANAGER_FILL,
+        rejection: null,
+        history: [event("HR", "Scheda importata e inviata al manager")],
+      }));
+      setBonuses((prev) => [...created, ...prev]);
+      setView("compila");
+      setImportError("");
+    } catch (err) {
+      setImportError(err.message || "Impossibile importare il file.");
+    }
   };
 
   const submitFill = () => {
@@ -321,6 +398,7 @@ export default function ApprovazioneBonus() {
       history: [...b.history, event("Manager", "Scheda compilata e inviata ad HR")],
     }));
     setFillDraft(null);
+    setView("approva");
   };
 
   const approve = (id, actor) => {
@@ -349,19 +427,18 @@ export default function ApprovazioneBonus() {
       history: [...b.history, event(by, "Rifiutata — torna al manager", reason)],
     }));
     setRejecting(null);
+    setView("compila");
   };
 
-  const hrNav = [
-    { id: "crea", label: "Crea scheda" },
-    { id: "approva", label: "Da approvare", count: counts.hr },
+  const nav = [
+    { id: "compila", label: "Da compilare", count: counts.manager },
+    { id: "approva", label: "Da approvare", count: counts.hr + counts.compliance },
     { id: "avanzamento", label: "Avanzamento" },
-    { id: "lista", label: "Lista bonus", count: counts.published },
   ];
 
   const managerQueue = bonuses.filter((b) => b.status === STATUS.MANAGER_FILL);
   const hrQueue = bonuses.filter((b) => b.status === STATUS.HR_APPROVE);
   const complianceQueue = bonuses.filter((b) => b.status === STATUS.COMPLIANCE);
-  const published = bonuses.filter((b) => b.status === STATUS.PUBLISHED);
 
   if (draft) {
     return (
@@ -403,125 +480,54 @@ export default function ApprovazioneBonus() {
             rifiuto riporta la scheda al manager.
           </p>
         </div>
+        <div className="ab-head-actions">
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,.json,text/csv,application/json"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              importFromFile(file);
+            }}
+          />
+          <button
+            className="btn-cyan"
+            type="button"
+            onClick={() => fileRef.current?.click()}
+          >
+            <span aria-hidden>⬆</span> IMPORTA
+          </button>
+          <button className="btn-cta" type="button" onClick={startCreate}>
+            <span aria-hidden>＋</span> Crea scheda
+          </button>
+        </div>
       </div>
 
-      <div className="ab-rolebar" role="tablist" aria-label="Simula ruolo">
-        {ROLES.map((r) => (
+      <nav className="ab-subnav" aria-label="Viste processo">
+        {nav.map((item) => (
           <button
-            key={r.id}
+            key={item.id}
             type="button"
-            role="tab"
-            aria-selected={role === r.id}
-            className={`ab-role${role === r.id ? " active" : ""}`}
-            onClick={() => setRole(r.id)}
+            className={`ab-sub${view === item.id ? " active" : ""}`}
+            onClick={() => setView(item.id)}
           >
-            <strong>{r.label}</strong>
-            <span>{r.hint}</span>
+            {item.label}
+            {typeof item.count === "number" && (
+              <span className="ab-count">{item.count}</span>
+            )}
           </button>
         ))}
-      </div>
+      </nav>
 
-      {role === "hr" && (
-        <>
-          <nav className="ab-subnav" aria-label="Viste HR">
-            {hrNav.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={`ab-sub${hrView === item.id ? " active" : ""}`}
-                onClick={() => setHrView(item.id)}
-              >
-                {item.label}
-                {typeof item.count === "number" && (
-                  <span className="ab-count">{item.count}</span>
-                )}
-              </button>
-            ))}
-          </nav>
-
-          {hrView === "crea" && (
-            <div className="wf-empty">
-              <div className="wf-empty-icon" aria-hidden>
-                ＋
-              </div>
-              <h2>Crea una nuova scheda bonus</h2>
-              <p>
-                Compila titolo, utenti, ciclo e obiettivi come nella scheda Bonus. La scheda
-                comparirà nella lista da compilare dei manager.
-              </p>
-              <button className="btn-cta" type="button" onClick={startCreate}>
-                <span aria-hidden>＋</span> Crea scheda bonus
-              </button>
-            </div>
-          )}
-
-          {hrView === "approva" &&
-            (hrQueue.length === 0 ? (
-              <EmptyState
-                title="Nessuna scheda da approvare"
-                text="Quando i manager avranno compilato le schede, le troverai qui."
-              />
-            ) : (
-              <div className="ab-stack">
-                {hrQueue.map((bonus) => (
-                  <ReviewWidget
-                    key={bonus.id}
-                    bonus={bonus}
-                    actorLabel="Approvazione HR"
-                    onApprove={() => approve(bonus.id, "HR")}
-                    onReject={() => setRejecting({ id: bonus.id, by: "HR" })}
-                  />
-                ))}
-              </div>
-            ))}
-
-          {hrView === "avanzamento" && (
-            <ProgressBoard
-              bonuses={bonuses}
-              counts={counts}
-              expandedId={expandedId}
-              onToggle={(id) => setExpandedId((cur) => (cur === id ? null : id))}
-            />
-          )}
-
-          {hrView === "lista" &&
-            (published.length === 0 ? (
-              <EmptyState
-                title="Nessun bonus in lista"
-                text="I bonus approvati da HR e Compliance compariranno qui."
-              />
-            ) : (
-              <div className="ab-list-grid">
-                {published.map((b) => (
-                  <article className="ob-card" key={b.id}>
-                    <div className="ob-card-head">
-                      <span className="ob-card-title">{b.title}</span>
-                      <StatusBadge status={b.status} />
-                    </div>
-                    <p className="ob-line">
-                      Ciclo: <strong>{b.cycle}</strong>
-                    </p>
-                    <p className="ob-line">
-                      Utenti: <strong>{b.users.map(userLabel).join(", ")}</strong>
-                    </p>
-                    <p className="ob-line">
-                      Obiettivi: <strong>{b.objectives.length}</strong>
-                    </p>
-                    <div className="ob-progress">
-                      <span style={{ width: "100%" }} />
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ))}
-        </>
-      )}
-
-      {role === "manager" &&
+      {view === "compila" &&
         (managerQueue.length === 0 ? (
           <EmptyState
             title="Nessuna scheda da compilare"
-            text="Quando HR creerà una scheda bonus, la troverai in questa lista. Se HR o Compliance rifiutano, la scheda torna qui."
+            text="Crea o importa una scheda bonus per avviare la compilazione da parte dei manager."
+            actionLabel="Crea scheda bonus"
+            onAction={startCreate}
           />
         ) : (
           <div className="ab-inbox-grid">
@@ -536,14 +542,23 @@ export default function ApprovazioneBonus() {
           </div>
         ))}
 
-      {role === "compliance" &&
-        (complianceQueue.length === 0 ? (
+      {view === "approva" &&
+        (hrQueue.length === 0 && complianceQueue.length === 0 ? (
           <EmptyState
-            title="Nessuna scheda in compliance"
-            text="Dopo l'approvazione HR le schede arriveranno qui per il controllo finale."
+            title="Nessuna scheda da approvare"
+            text="Le schede compilate dai manager compariranno qui per HR e poi per Compliance."
           />
         ) : (
           <div className="ab-stack">
+            {hrQueue.map((bonus) => (
+              <ReviewWidget
+                key={bonus.id}
+                bonus={bonus}
+                actorLabel="Approvazione HR"
+                onApprove={() => approve(bonus.id, "HR")}
+                onReject={() => setRejecting({ id: bonus.id, by: "HR" })}
+              />
+            ))}
             {complianceQueue.map((bonus) => (
               <ReviewWidget
                 key={bonus.id}
@@ -556,8 +571,39 @@ export default function ApprovazioneBonus() {
           </div>
         ))}
 
+      {view === "avanzamento" && (
+        <ProgressBoard
+          bonuses={bonuses}
+          counts={counts}
+          expandedId={expandedId}
+          onToggle={(id) => setExpandedId((cur) => (cur === id ? null : id))}
+        />
+      )}
+
       {rejecting && (
         <RejectModal onCancel={() => setRejecting(null)} onConfirm={confirmReject} />
+      )}
+
+      {importError && (
+        <div className="modal-overlay" onClick={() => setImportError("")}>
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="modal-title">Import non riuscito</h3>
+            <p className="modal-sub">{importError}</p>
+            <p className="hint">
+              Usa un CSV con colonne Titolo, Utenti, Ciclo oppure un JSON con elenco di schede.
+            </p>
+            <div className="modal-actions">
+              <button className="btn-primary" type="button" onClick={() => setImportError("")}>
+                CHIUDI
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -568,7 +614,7 @@ function ProgressBoard({ bonuses, counts, expandedId, onToggle }) {
     { id: STATUS.MANAGER_FILL, title: "Da compilare", count: counts.manager },
     { id: STATUS.HR_APPROVE, title: "Approvazione HR", count: counts.hr },
     { id: STATUS.COMPLIANCE, title: "Compliance", count: counts.compliance },
-    { id: STATUS.PUBLISHED, title: "Lista bonus", count: counts.published },
+    { id: STATUS.PUBLISHED, title: "Pubblicati", count: counts.published },
   ];
 
   return (

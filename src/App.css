@@ -1844,41 +1844,18 @@
 
 .ab-head {
   margin-bottom: 22px;
-}
-
-.ab-rolebar {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 18px;
-}
-
-.ab-role {
-  text-align: left;
-  background: #fff;
-  border: 1.5px solid #e6ebf5;
-  border-radius: 14px;
-  padding: 14px 16px;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  box-shadow: 0 4px 12px rgba(26, 42, 82, 0.04);
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
 }
 
-.ab-role strong {
-  color: var(--navy);
-  font-size: 15px;
-}
-
-.ab-role span {
-  color: var(--muted);
-  font-size: 12.5px;
-}
-
-.ab-role.active {
-  border-color: var(--blue);
-  background: linear-gradient(180deg, #f4f8ff, #eef4ff);
-  box-shadow: 0 8px 18px rgba(47, 123, 246, 0.18);
+.ab-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: none;
 }
 
 .ab-subnav {
@@ -2021,8 +1998,7 @@
   margin: 10px 0 4px;
 }
 
-.ab-inbox-grid,
-.ab-list-grid {
+.ab-inbox-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
@@ -2309,8 +2285,7 @@
 @media (max-width: 1100px) {
   .ab-kanban,
   .ab-stats,
-  .ab-inbox-grid,
-  .ab-list-grid {
+  .ab-inbox-grid {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -2347,11 +2322,18 @@
     grid-template-columns: 1fr;
   }
 
-  .ab-rolebar,
+  .ab-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ab-head-actions {
+    justify-content: flex-start;
+  }
+
   .ab-kanban,
   .ab-stats,
-  .ab-inbox-grid,
-  .ab-list-grid {
+  .ab-inbox-grid {
     grid-template-columns: 1fr;
   }
 
